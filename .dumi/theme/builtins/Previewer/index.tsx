@@ -1,22 +1,17 @@
-import type { FC } from 'react';
-import React from 'react';
+import React, { Suspense } from 'react';
+import { Alert } from 'antd';
+import Previewer from './Previewer';
+import DemoFallback from './DemoFallback';
 import type { IPreviewerProps } from 'dumi';
-import { useTabMeta } from 'dumi';
-import CodePreviewer from './CodePreviewer';
-import DesignPreviewer from './DesignPreviewer';
 
-export interface AntdPreviewerProps extends IPreviewerProps {
-  originDebug?: IPreviewerProps['debug'];
-}
+const { ErrorBoundary } = Alert;
 
-const Previewer: FC<AntdPreviewerProps> = ({ ...props }) => {
-  const tab = useTabMeta();
+const PreviewerSuspense: React.FC<IPreviewerProps> = (props) => (
+  <ErrorBoundary>
+    <Suspense fallback={<DemoFallback />}>
+      <Previewer {...props} />
+    </Suspense>
+  </ErrorBoundary>
+);
 
-  if (tab?.frontmatter.title === 'Design') {
-    return <DesignPreviewer {...props} />;
-  }
-
-  return <CodePreviewer {...props} />;
-};
-
-export default Previewer;
+export default PreviewerSuspense;

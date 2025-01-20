@@ -1,7 +1,8 @@
-import { TinyColor } from '@ctrl/tinycolor';
+import { FastColor } from '@ant-design/fast-color';
+
 import type { AliasToken, MapToken, OverrideToken, SeedToken } from '../interface';
-import getAlphaColor from './getAlphaColor';
 import seedToken from '../themes/seed';
+import getAlphaColor from './getAlphaColor';
 
 /** Raw merge of `@ant-design/cssinjs` token. Which need additional process */
 type RawMergedToken = MapToken & OverrideToken & { override: Partial<AliasToken> };
@@ -31,13 +32,17 @@ export default function formatToken(derivativeToken: RawMergedToken): AliasToken
   const screenXL = 1200;
   const screenXXL = 1600;
 
+  // Motion
+  if (mergedToken.motion === false) {
+    const fastDuration = '0s';
+    mergedToken.motionDurationFast = fastDuration;
+    mergedToken.motionDurationMid = fastDuration;
+    mergedToken.motionDurationSlow = fastDuration;
+  }
+
   // Generate alias token
   const aliasToken: AliasToken = {
     ...mergedToken,
-
-    colorLink: mergedToken.colorInfoText,
-    colorLinkHover: mergedToken.colorInfoHover,
-    colorLinkActive: mergedToken.colorInfoActive,
 
     // ============== Background ============== //
     colorFillContent: mergedToken.colorFillSecondary,
@@ -70,7 +75,7 @@ export default function formatToken(derivativeToken: RawMergedToken): AliasToken
     fontSizeIcon: mergedToken.fontSizeSM,
 
     // Line
-    lineWidthFocus: mergedToken.lineWidth * 4,
+    lineWidthFocus: mergedToken.lineWidth * 3,
 
     // Control
     lineWidth: mergedToken.lineWidth,
@@ -162,9 +167,9 @@ export default function formatToken(derivativeToken: RawMergedToken): AliasToken
 
     boxShadowPopoverArrow: '2px 2px 5px rgba(0, 0, 0, 0.05)',
     boxShadowCard: `
-      0 1px 2px -2px ${new TinyColor('rgba(0, 0, 0, 0.16)').toRgbString()},
-      0 3px 6px 0 ${new TinyColor('rgba(0, 0, 0, 0.12)').toRgbString()},
-      0 5px 12px 4px ${new TinyColor('rgba(0, 0, 0, 0.09)').toRgbString()}
+      0 1px 2px -2px ${new FastColor('rgba(0, 0, 0, 0.16)').toRgbString()},
+      0 3px 6px 0 ${new FastColor('rgba(0, 0, 0, 0.12)').toRgbString()},
+      0 5px 12px 4px ${new FastColor('rgba(0, 0, 0, 0.09)').toRgbString()}
     `,
     boxShadowDrawerRight: `
       -6px 0 16px 0 rgba(0, 0, 0, 0.08),

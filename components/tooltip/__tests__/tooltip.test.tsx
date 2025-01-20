@@ -1,19 +1,19 @@
-import { spyElementPrototype } from 'rc-util/lib/test/domHook';
 import React from 'react';
-import { act } from 'react-dom/test-utils';
+import { spyElementPrototype } from 'rc-util/lib/test/domHook';
+
 import type { TooltipPlacement } from '..';
 import Tooltip from '..';
+import getPlacements from '../../_util/placements';
+import { resetWarned } from '../../_util/warning';
 import mountTest from '../../../tests/shared/mountTest';
 import rtlTest from '../../../tests/shared/rtlTest';
-import { fireEvent, render, waitFakeTimer } from '../../../tests/utils';
+import { act, fireEvent, render, waitFakeTimer } from '../../../tests/utils';
 import Button from '../../button';
 import DatePicker from '../../date-picker';
 import Input from '../../input';
 import Group from '../../input/Group';
 import Radio from '../../radio';
 import Switch from '../../switch';
-import getPlacements from '../../_util/placements';
-import { resetWarned } from '../../_util/warning';
 import { isTooltipOpen } from './util';
 
 describe('Tooltip', () => {
@@ -133,16 +133,15 @@ describe('Tooltip', () => {
       </Tooltip>,
     );
 
-    expect(container.getElementsByTagName('span')).toHaveLength(1);
-    const button = container.getElementsByTagName('span')[0];
+    const button = container.getElementsByTagName('button')[0];
 
-    fireEvent.mouseEnter(button);
+    fireEvent.pointerEnter(button);
     await waitFakeTimer();
     expect(onOpenChange).toHaveBeenCalledWith(true);
     expect(isTooltipOpen()).toBeTruthy();
     expect(container.querySelector('.ant-tooltip-open')).not.toBeNull();
 
-    fireEvent.mouseLeave(button);
+    fireEvent.pointerLeave(button);
     await waitFakeTimer();
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(isTooltipOpen()).toBeFalsy();
@@ -167,15 +166,16 @@ describe('Tooltip', () => {
         );
 
         expect(container.children[0]).toMatchSnapshot();
-        const button = container.getElementsByTagName('span')[0];
 
-        fireEvent.mouseEnter(button);
+        const button = container.getElementsByTagName('button')[0];
+
+        fireEvent.pointerEnter(button);
         await waitFakeTimer();
         expect(onOpenChange).toHaveBeenCalledWith(true);
         expect(isTooltipOpen()).toBeTruthy();
         expect(container.querySelector('.ant-tooltip-open')).not.toBeNull();
 
-        fireEvent.mouseLeave(button);
+        fireEvent.pointerLeave(button);
         await waitFakeTimer();
         expect(onOpenChange).toHaveBeenCalledWith(false);
         expect(isTooltipOpen()).toBeFalsy();
@@ -200,8 +200,8 @@ describe('Tooltip', () => {
         </Button>
       </Tooltip>,
     );
-    expect(containerInline.getElementsByTagName('span')[0].style.display).toBe('inline-block');
-    expect(containerBlock.getElementsByTagName('span')[0].style.display).toBe('block');
+    expect(getComputedStyle(containerInline.querySelector('button')!)?.display).toBe('inline-flex');
+    expect(getComputedStyle(containerBlock.querySelector('button')!)?.display).toBe('block');
   });
 
   it('should warn for arrowPointAtCenter', async () => {
@@ -215,7 +215,7 @@ describe('Tooltip', () => {
         mouseLeaveDelay={0}
         placement="bottomLeft"
         arrowPointAtCenter
-        overlayClassName="point-center-element"
+        classNames={{ root: 'point-center-element' }}
       >
         <button type="button">Hello world!</button>
       </Tooltip>,
@@ -232,7 +232,7 @@ describe('Tooltip', () => {
         mouseLeaveDelay={0}
         placement="bottomLeft"
         arrow={{ arrowPointAtCenter: true }}
-        overlayClassName="point-center-element"
+        classNames={{ root: 'point-center-element' }}
       >
         <button type="button">Hello world!</button>
       </Tooltip>,
@@ -402,9 +402,9 @@ describe('Tooltip', () => {
     expect(document.querySelector('.ant-tooltip')).not.toBeNull();
   });
 
-  it('should pass overlayInnerStyle through to the inner component', () => {
+  it('should pass styles={{ body: {} }} through to the inner component', () => {
     const { container } = render(
-      <Tooltip overlayInnerStyle={{ color: 'red' }} title="xxxxx" open>
+      <Tooltip styles={{ body: { color: 'red' } }} title="xxxxx" open>
         <div />
       </Tooltip>,
     );
@@ -423,9 +423,8 @@ describe('Tooltip', () => {
         <Switch loading defaultChecked />
       </Tooltip>,
     );
-    const wrapperEl = container.querySelectorAll('.ant-tooltip-disabled-compatible-wrapper');
-    expect(wrapperEl).toHaveLength(1);
-    fireEvent.mouseEnter(container.getElementsByTagName('span')[0]);
+
+    fireEvent.pointerEnter(container.getElementsByTagName('button')[0]);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
     expect(container.querySelector('.ant-tooltip-open')).not.toBeNull();
   });
@@ -442,9 +441,8 @@ describe('Tooltip', () => {
         <Radio disabled />
       </Tooltip>,
     );
-    const wrapperEl = container.querySelectorAll('.ant-tooltip-disabled-compatible-wrapper');
-    expect(wrapperEl).toHaveLength(1);
-    fireEvent.mouseEnter(container.getElementsByTagName('span')[0]);
+
+    fireEvent.pointerEnter(container.getElementsByTagName('input')[0]);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
     expect(container.querySelector('.ant-tooltip-open')).not.toBeNull();
   });
@@ -495,7 +493,7 @@ describe('Tooltip', () => {
     await waitFakeTimer();
 
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Tooltip] `defaultVisible` is deprecated, please use `defaultOpen` instead.',
+      'Warning: [antd: Tooltip] `defaultVisible` is deprecated. Please use `defaultOpen` instead.',
     );
     expect(isTooltipOpen()).toBeTruthy();
 
@@ -506,7 +504,7 @@ describe('Tooltip', () => {
       </Tooltip>,
     );
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Tooltip] `visible` is deprecated, please use `open` instead.',
+      'Warning: [antd: Tooltip] `visible` is deprecated. Please use `open` instead.',
     );
 
     rerender(
@@ -527,7 +525,7 @@ describe('Tooltip', () => {
       </Tooltip>,
     );
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Tooltip] `onVisibleChange` is deprecated, please use `onOpenChange` instead.',
+      'Warning: [antd: Tooltip] `onVisibleChange` is deprecated. Please use `onOpenChange` instead.',
     );
 
     // afterVisibleChange
@@ -537,7 +535,7 @@ describe('Tooltip', () => {
       </Tooltip>,
     );
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Tooltip] `afterVisibleChange` is deprecated, please use `afterOpenChange` instead.',
+      'Warning: [antd: Tooltip] `afterVisibleChange` is deprecated. Please use `afterOpenChange` instead.',
     );
 
     // Event Trigger
@@ -563,7 +561,7 @@ describe('Tooltip', () => {
   });
 
   it('not inject className when children className is not string type', () => {
-    const HOC = ({ className }: { className: Function }) => <span className={className()} />;
+    const HOC = ({ className }: { className: () => string }) => <span className={className()} />;
     const { container } = render(
       <Tooltip open>
         <HOC className={() => 'bamboo'} />
@@ -602,5 +600,34 @@ describe('Tooltip', () => {
     });
     expect(error).toHaveBeenCalled();
     error.mockRestore();
+  });
+
+  it('should apply custom styles to Tooltip', () => {
+    const customClassNames = {
+      body: 'custom-body',
+      root: 'custom-root',
+    };
+
+    const customStyles = {
+      body: { color: 'red' },
+      root: { backgroundColor: 'blue' },
+    };
+
+    const { container } = render(
+      <Tooltip classNames={customClassNames} overlay={<div />} styles={customStyles} visible>
+        <button type="button">button</button>
+      </Tooltip>,
+    );
+
+    const tooltipElement = container.querySelector('.ant-tooltip') as HTMLElement;
+    const tooltipBodyElement = container.querySelector('.ant-tooltip-inner') as HTMLElement;
+
+    // 验证 classNames
+    expect(tooltipElement.classList).toContain('custom-root');
+    expect(tooltipBodyElement.classList).toContain('custom-body');
+
+    // 验证 styles
+    expect(tooltipElement.style.backgroundColor).toBe('blue');
+    expect(tooltipBodyElement.style.color).toBe('red');
   });
 });

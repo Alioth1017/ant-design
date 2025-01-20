@@ -1,12 +1,13 @@
 import React from 'react';
+
 import Slider from '..';
+import { resetWarned } from '../../_util/warning';
 import focusTest from '../../../tests/shared/focusTest';
 import mountTest from '../../../tests/shared/mountTest';
 import rtlTest from '../../../tests/shared/rtlTest';
-import { act, fireEvent, render } from '../../../tests/utils';
+import { act, fireEvent, render, waitFakeTimer } from '../../../tests/utils';
 import ConfigProvider from '../../config-provider';
-import type { TooltipProps } from '../../tooltip';
-import { resetWarned } from '../../_util/warning';
+import type { TooltipProps, TooltipRef } from '../../tooltip';
 import SliderTooltip from '../SliderTooltip';
 
 function tooltipProps(): TooltipProps {
@@ -14,10 +15,10 @@ function tooltipProps(): TooltipProps {
 }
 
 jest.mock('../../tooltip', () => {
-  const ReactReal = jest.requireActual('react');
+  const ReactReal: typeof React = jest.requireActual('react');
   const Tooltip = jest.requireActual('../../tooltip');
   const TooltipComponent = Tooltip.default;
-  return ReactReal.forwardRef((props: TooltipProps, ref: any) => {
+  return ReactReal.forwardRef<TooltipRef, TooltipProps>((props, ref) => {
     (global as any).tooltipProps = props;
     return <TooltipComponent {...props} ref={ref} />;
   });
@@ -37,14 +38,15 @@ describe('Slider', () => {
     jest.useRealTimers();
   });
 
-  it('should show tooltip when hovering slider handler', () => {
+  it('should show tooltip when hovering slider handler', async () => {
     const { container } = render(<Slider defaultValue={30} />);
 
     fireEvent.mouseEnter(container.querySelector('.ant-slider-handle')!);
+    await waitFakeTimer();
     expect(document.querySelector('.ant-tooltip')).toMatchSnapshot();
 
     fireEvent.mouseLeave(container.querySelector('.ant-slider-handle')!);
-
+    await waitFakeTimer();
     expect(document.querySelector('.ant-tooltip')).toMatchSnapshot();
   });
 
@@ -55,6 +57,15 @@ describe('Slider', () => {
 
     fireEvent.mouseEnter(container.querySelector('.ant-slider-handle')!);
     expect(tooltipProps().placement).toEqual('left');
+  });
+
+  it('support autoAdjustOverflow', () => {
+    const { container } = render(
+      <Slider vertical defaultValue={30} tooltip={{ autoAdjustOverflow: false }} />,
+    );
+
+    fireEvent.mouseEnter(container.querySelector('.ant-slider-handle')!);
+    expect(tooltipProps().autoAdjustOverflow).toBe(false);
   });
 
   it('when tooltip.open is true, tooltip should show always, or should never show', () => {
@@ -162,27 +173,27 @@ describe('Slider', () => {
 
     const { container, rerender } = render(<TSSlider tooltipPrefixCls="xxx" />);
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Slider] `tooltipPrefixCls` is deprecated, please use `tooltip.prefixCls` instead.',
+      'Warning: [antd: Slider] `tooltipPrefixCls` is deprecated. Please use `tooltip.prefixCls` instead.',
     );
 
     rerender(<TSSlider getTooltipPopupContainer={() => document.body} />);
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Slider] `getTooltipPopupContainer` is deprecated, please use `tooltip.getPopupContainer` instead.',
+      'Warning: [antd: Slider] `getTooltipPopupContainer` is deprecated. Please use `tooltip.getPopupContainer` instead.',
     );
 
     rerender(<TSSlider tipFormatter={(v: any) => v} />);
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Slider] `tipFormatter` is deprecated, please use `tooltip.formatter` instead.',
+      'Warning: [antd: Slider] `tipFormatter` is deprecated. Please use `tooltip.formatter` instead.',
     );
 
     rerender(<TSSlider tooltipVisible />);
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Slider] `tooltipVisible` is deprecated, please use `tooltip.open` instead.',
+      'Warning: [antd: Slider] `tooltipVisible` is deprecated. Please use `tooltip.open` instead.',
     );
 
     rerender(<TSSlider tooltipPlacement="left" />);
     expect(errSpy).toHaveBeenCalledWith(
-      'Warning: [antd: Slider] `tooltipPlacement` is deprecated, please use `tooltip.placement` instead.',
+      'Warning: [antd: Slider] `tooltipPlacement` is deprecated. Please use `tooltip.placement` instead.',
     );
 
     // All should work
@@ -213,5 +224,52 @@ describe('Slider', () => {
     holder.parentNode?.removeChild(holder);
 
     errSpy.mockRestore();
+  });
+  it('should apply custom styles to Descriptions', () => {
+    const customClassNames = {
+      root: 'custom-root',
+      track: 'custom-track',
+      tracks: 'custom-tracks',
+      rail: 'custom-rail',
+      handle: 'custom-handle',
+    };
+
+    const customStyles = {
+      root: { backgroundColor: 'red' },
+      track: { backgroundColor: 'black' },
+      tracks: { backgroundColor: 'yellow' },
+      rail: { backgroundColor: 'purple' },
+      handle: { backgroundColor: 'blue' },
+    };
+
+    const { container } = render(
+      <Slider
+        range
+        defaultValue={[20, 30, 50]}
+        style={{ width: '100%' }}
+        classNames={customClassNames}
+        styles={customStyles}
+      />,
+    );
+
+    const rootElement = container.querySelector('.ant-slider') as HTMLElement;
+    const trackElement = container.querySelector('.ant-slider-track') as HTMLElement;
+    const tracksElement = container.querySelector('.ant-slider-tracks') as HTMLElement;
+    const railElement = container.querySelector('.ant-slider-rail') as HTMLElement;
+    const handleElement = container.querySelector('.ant-slider-handle') as HTMLElement;
+
+    // check classNames
+    expect(rootElement.classList).toContain('custom-root');
+    expect(trackElement.classList).toContain('custom-track');
+    expect(tracksElement.classList).toContain('custom-tracks');
+    expect(railElement.classList).toContain('custom-rail');
+    expect(handleElement.classList).toContain('custom-handle');
+
+    // check styles
+    expect(rootElement.style.backgroundColor).toBe('red');
+    expect(trackElement.style.backgroundColor).toBe('black');
+    expect(tracksElement.style.backgroundColor).toBe('yellow');
+    expect(railElement.style.backgroundColor).toBe('purple');
+    expect(handleElement.style.backgroundColor).toBe('blue');
   });
 });
